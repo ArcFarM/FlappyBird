@@ -1,9 +1,9 @@
-﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace FlappyBird {
     public class Player : MonoBehaviour {
+
+
         //속도 계산을 위한 RigidBody
         private Rigidbody2D rb2d;
         //오브젝트의 점프력
@@ -12,6 +12,7 @@ namespace FlappyBird {
         float minSpeed = -10f;
         float maxSpeed = 7f;
         float rightSpeed = 3f;
+        float maxRightSpeed = 6f;
         //점프 상태 점검; 너무 짧은 시간 내에 반복적으로 점프하는 것을 막기 위함
         private bool jumpCheck = false;
         public float jumpInterval = 0.1f; // 점프 간격
@@ -24,6 +25,18 @@ namespace FlappyBird {
         //회귀지점
         [SerializeField] Transform recursionPoint;
 
+        #region Property
+        public float RightSpeed {
+            get { return rightSpeed; }
+            set { rightSpeed = Mathf.Min(value, maxRightSpeed); }
+        }
+        #endregion
+
+        private void Awake() {
+            //타이틀 화면에서는 안보여야 함
+            gameObject.SetActive(false);
+        }
+
         void Start() {
             rb2d = GetComponent<Rigidbody2D>();
             rotation = transform.eulerAngles;
@@ -31,7 +44,7 @@ namespace FlappyBird {
         }
 
         void Update() {
-            if (GameManager.IsReady == false) {
+            if (GameManager.Instance.IsReady == false) {
                 //회전을 고정하고 제자리 점프하게 만들기
                 if (transform.position.y < 0) rb2d.linearVelocityY += jumpForce;
                 SpeedSetting();
@@ -39,15 +52,19 @@ namespace FlappyBird {
                 return;
             }
 
+            //죽었을 때 떨어지는 걸 연출하기 위해 사망 상태에도 진행
+            RotateByPos(rb2d.linearVelocity);
+            SpeedSetting();
+            if (GameManager.Instance.IsDead) {
+                //죽었을 때 그냥 맵 밖으로 떨어지게 냅두기
+                GetComponent<CircleCollider2D>().enabled = false;
+                GetComponent<Animator>().enabled = false;
+                if(transform.position.y < -50f) Debug_DontFall();
+                return;
+            }
             MoveRight();
             CheckInput();
-            SpeedSetting();
-
-            //방향에 따라 회전
-            RotateByPos(rb2d.linearVelocity);
-
-            //디버그 : 낙하 방지
-            //Debug_DontFall();
+            BackToStart();
         }
 
         private void MoveRight() {
@@ -69,7 +86,7 @@ namespace FlappyBird {
         }
 
         void Debug_DontFall() {
-            transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
+            transform.position = new Vector3(transform.position.x, -50f, transform.position.z);
         }
 
         //입력 받기와 실제 물리 연산을 분리
@@ -82,9 +99,9 @@ namespace FlappyBird {
 
         void CheckInput() {
             //게임 준비 단계에서 스페이 스 바 혹은 마우스 클릭 시 게임 시작
-            if (!GameManager.IsReady) {
-                GameManager.IsReady |= Input.GetKeyDown(KeyCode.Space);
-                GameManager.IsReady |= Input.GetKeyDown(KeyCode.Mouse0);
+            if (!GameManager.Instance.IsReady) {
+                GameManager.Instance.IsReady |= Input.GetKeyDown(KeyCode.Space);
+                GameManager.Instance.IsReady |= Input.GetKeyDown(KeyCode.Mouse0);
             }
             //스페이스 바나 마우스 클릭 시 점프
             jumpCheck |= Input.GetKeyDown(KeyCode.Space);
@@ -113,6 +130,20 @@ namespace FlappyBird {
             transform.rotation = Quaternion.Euler(rotation);
         }
 
+        //점수 획득
+        private void OnTriggerEnter2D(Collider2D collision) {
+            if (collision.CompareTag("ScoreZone")) {
+
+                GameManager.Score++;
+                Scoring.SettingScore();
+
+                if (GameManager.Score > GameManager.HighScore) {
+                    Scoring.BestScoreEffect();
+                }
+            }
+
+
+        }
     }
 
 }
