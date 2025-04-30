@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace FlappyBird {
     public class Player : MonoBehaviour {
@@ -21,9 +22,6 @@ namespace FlappyBird {
         float maxposrotation = 30;
         float minposrotation = -90;
         [SerializeField] private float rotationSpeed = 30f; // 회전 속도
-
-        //회귀지점
-        [SerializeField] Transform recursionPoint;
 
         #region Property
         public float RightSpeed {
@@ -64,7 +62,6 @@ namespace FlappyBird {
             }
             MoveRight();
             CheckInput();
-            BackToStart();
         }
 
         private void MoveRight() {
@@ -75,13 +72,6 @@ namespace FlappyBird {
             //낙하 속도 조절
             if (rb2d.linearVelocityY < minSpeed || rb2d.linearVelocityY > maxSpeed) {
                 rb2d.linearVelocityY = Mathf.Clamp(rb2d.linearVelocity.y, minSpeed, maxSpeed);
-            }
-        }
-
-        void BackToStart() {
-            //회귀지점 도달 시 x = 0으로 되돌아가기
-            if (transform.position.x > recursionPoint.position.x) {
-                transform.position = new Vector3(0f, transform.position.y, transform.position.z);
             }
         }
 
@@ -98,6 +88,7 @@ namespace FlappyBird {
         }
 
         void CheckInput() {
+#if UNITY_EDITOR
             //게임 준비 단계에서 스페이 스 바 혹은 마우스 클릭 시 게임 시작
             if (!GameManager.Instance.IsReady) {
                 GameManager.Instance.IsReady |= Input.GetKeyDown(KeyCode.Space);
@@ -106,6 +97,17 @@ namespace FlappyBird {
             //스페이스 바나 마우스 클릭 시 점프
             jumpCheck |= Input.GetKeyDown(KeyCode.Space);
             jumpCheck |= Input.GetKeyDown(KeyCode.Mouse0);
+#else
+            //터치로 입력 처리
+            if (Input.touchCount > 0) {
+                Touch touch = Input.GetTouch(0);
+                if(!GameManager.Instance.IsReady) 
+                    GameManager.Instance.IsReady |= (touch.phase == UnityEngine.TouchPhase.Began);
+                if(GameManager.Instance.IsReady)
+                    jumpCheck |= (touch.phase == UnityEngine.TouchPhase.Began);
+            }
+
+#endif
         }
         void Do_Jump() {
             // 점프 높이만큼 위쪽 방향으로 이동하는 속도를 추가
@@ -130,19 +132,12 @@ namespace FlappyBird {
             transform.rotation = Quaternion.Euler(rotation);
         }
 
-        //점수 획득
-        private void OnTriggerEnter2D(Collider2D collision) {
-            if (collision.CompareTag("ScoreZone")) {
-
-                GameManager.Score++;
-                Scoring.SettingScore();
-
-                if (GameManager.Score > GameManager.HighScore) {
-                    Scoring.BestScoreEffect();
-                }
+        //일정 점수 마다 난이도 강화 - 10점마다 속도 5% 상승
+        public void IncreaseSpeed() {
+            if (GameManager.Score % 10 == 0 && rightSpeed < maxRightSpeed) {
+                rightSpeed = Mathf.Min(rightSpeed * 1.05f, maxRightSpeed);
+                //Debug.Log("Speed : " + rightSpeed);
             }
-
-
         }
     }
 

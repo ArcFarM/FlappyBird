@@ -10,6 +10,7 @@ namespace FlappyBird {
         [SerializeField] float minY = -4f; // Minimum Y position for spawning
         [SerializeField] float maxY = 4f; // Maximum Y position for spawning
         float timer = 0;
+        float distance = 5f;
         public Transform playerPos;
 
         void Start() {
@@ -27,8 +28,15 @@ namespace FlappyBird {
         void SpawnObstacle() {
             if (!GameManager.Instance.IsReady) return;
             float randomY = Random.Range(minY, maxY);
-            Vector3 spawnPosition = new Vector3(playerPos.position.x + 5, randomY, 0);
+            Vector3 spawnPosition = new Vector3(playerPos.position.x + distance, randomY, 0);
             Instantiate(obstaclePrefab, spawnPosition, Quaternion.identity);
+        }
+
+        void MoreDifficult() {
+            if(GameManager.Score % 10 == 0 && spawnInterval > minInterval) {
+                distance *= 1.05f;
+                spawnInterval = Mathf.Max(minInterval, spawnInterval*0.95f);
+            }
         }
     }
 }

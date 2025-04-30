@@ -10,23 +10,26 @@ namespace FlappyBird {
         [SerializeField] FadeCanvas fadePanel;
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start() {
+
+        private void OnEnable() {
             curr_score.text = GameManager.Score.ToString();
             best_score.text = GameManager.HighScore.ToString();
-
-            new_best.gameObject.SetActive(false);
             if (GameManager.Score > GameManager.HighScore) {
                 //점수 갱신 연출
                 float scoreAnimTime = 1.5f;
                 float timer = 0f;
-                while(timer < scoreAnimTime) {
-                    timer+= Time.deltaTime;
-                    curr_score.text = Mathf.Lerp(GameManager.HighScore, GameManager.Score, timer / scoreAnimTime).ToString("F0");
+                while (timer < scoreAnimTime) {
+                    timer += Time.deltaTime;
+                    best_score.text = Mathf.Lerp(GameManager.HighScore, GameManager.Score, timer / scoreAnimTime).ToString("F0");
                 }
                 //점수 정보 갱신
                 GameManager.Instance.UpdateScore();
                 new_best.gameObject.SetActive(true);
             }
+        }
+
+        void Start() {
+            new_best.gameObject.SetActive(false);
         }
 
         public void RetryButton() {

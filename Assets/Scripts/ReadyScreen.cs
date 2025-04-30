@@ -8,12 +8,14 @@ namespace FlappyBird {
         bool blinkSwitch = false;
         // Update is called once per frame
         private void Start() {
+            //점수 초기화
+            GameManager.Score = 0;
             TextBlink();
         }
         void Update() {
             if(GameManager.instance.IsReady) {
                 // 게임 시작
-                gameObject.SetActive(false);
+                GameManager.Instance.StartGame();
             }
             else if(!blinkSwitch) {
                 blinkSwitch = true;

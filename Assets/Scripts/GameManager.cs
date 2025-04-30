@@ -51,8 +51,6 @@ public class GameManager : MonoBehaviour
         } else {
             resetButton.GetComponent<Button>().onClick.AddListener(ResetData);
         }
-
-        StartGame();
     }
 
     public static GameManager Instance {
@@ -82,6 +80,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGame() {
         //게임 시작
+        readyScreen.SetActive(false);
         scoreScreen.SetActive(true);
     }
 
@@ -89,6 +88,8 @@ public class GameManager : MonoBehaviour
         // 게임 오버 처리
         Debug.Log("Game Over");
         isDead = true;
+        //점수 화면 가리기
+        scoreScreen.SetActive(false);
         // 게임 오버 화면 팝업
         gameOverScreen.SetActive(true);
     }
